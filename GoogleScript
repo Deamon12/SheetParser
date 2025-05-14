@@ -39,7 +39,7 @@ function iterateLinks(listOfLinks) {
     const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
     Logger.log('Processing Google Doc: ' + docId);
     if(docId != null) {
-      let rowData = parseDocSections(docId);
+      let rowData = parseDocSections(docId);//parseDocSections(docId);
       Logger.log(rowData)
       writeSectionsToSheet(rowData, index)
     }
@@ -55,28 +55,74 @@ function writeSectionsToSheet(sections, rowIndex) {
   });
 }
 
+
 function parseDocSections(docId) {
 
   const doc = DocumentApp.openById(docId); // Open the Google Doc using the DocumentApp API
   const body = doc.getBody();     // Get the body of the document
+  const numElements = body.getNumChildren();
+  Logger.log("numElements: " + numElements)
   const paragraphs = body.getParagraphs();      // Iterate through all elements in the body
 
+  let whichH2 = 0;
+  let whichH3 = 0;
+
+  let currentNormal = '';
   let textSections = [];
+
+  textSections.push("todo route"); // empty first spot...
   paragraphs.forEach(function(paragraph) {
     const text = paragraph.getText(); // Get the text content of the paragraph
 
-    Logger.log("Type: " + paragraph.getHeading())
-    textSections.push(text)
+    //Logger.log("Type: " + paragraph.getHeading())
+    //textSections.push(text)
+
+    // H1
+    // N
+
+    // H2 - x6
+    // Normal
+
+    // H2
+
+    // H3 - x7
+    // N
+
+
 
     // Example: Check if the paragraph is a heading (e.g., Heading 1)
-    //if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING1) {
-    //  Logger.log('Heading 1: ' + text);
-    //}
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING1) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      Logger.log('Heading 1: ' + text);
+      textSections.push(text);
+    }
+
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING2) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      //Logger.log('Heading 2: ' + text);
+      textSections.push(text);
+    }
+
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING3) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      //Logger.log('Heading 2: ' + text);
+      textSections.push(text);
+    }
 
     // Example: Check if the paragraph is a regular paragraph
-    //if (paragraph.getHeading() === DocumentApp.ParagraphHeading.NORMAL) {
-    //  Logger.log('Normal Paragraph: ' + text);
-    //}
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.NORMAL) {
+      //Logger.log('Normal Paragraph: ' + text);
+      currentNormal += text;
+    }
 
     // You can add more conditions to check for other types of sections (Headings 2, 3, Lists, etc.)
   });
@@ -115,6 +161,69 @@ function clearSheetExceptTopRow() {
   }
 }
 
+function tagCellsUsingSwitch() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const range = sheet.getDataRange();
+  const values = range.getValues(); // 2D array of all data
+
+  // Start from row 1 if row 0 is the header
+  for (let row = 1; row < values.length; row++) {
+    for (let col = 0; col < values[0].length; col++) {
+      let cellValue = values[row][col];
+      if (typeof cellValue !== 'string' || !cellValue.trim()) continue;
+
+      let title;
+      let result;
+      let lines;
+
+      switch (col) {
+        case 4: // article_section_1
+        case 6: // article_section_2
+        case 8: // article_section_3
+        case 10: // article_section_4
+        case 12: // article_section_5
+        case 14: // article_section_6
+          title = values[row][col-1];
+          result = `<h2>${title}</h2><ul>`;
+          lines = cellValue.split('.');
+          for (let i = 0; i < lines.length; i++) {
+            if(lines[i].length == 0) {
+              continue;
+            }
+            result += `<li>${lines[i]}</li>`;
+          }
+          result += `</ul>`;
+          values[row][col] = result;
+          break;
+
+/*
+        case 2: // Column C (e.g., 'intro_copy')
+          if (!cellValue.includes('<p>')) {
+            values[row][col] = `<p>${cellValue}</p>`;
+          }
+          break;
+
+        case 16: // Column Q (e.g., 'accordion_headline_1')
+          if (!cellValue.includes('<h3>')) {
+            values[row][col] = `<h3>${cellValue}</h3>`;
+          }
+          break;
+
+        case 17: // Column R (e.g., 'accordion_info_1')
+          if (!cellValue.includes('<div>')) {
+            values[row][col] = `<div>${cellValue}</div>`;
+          }
+          break;
+          */
+        // Add more cases as needed
+      }
+    }
+  }
+
+  // Write back updated values
+  range.setValues(values);
+}
+
 function main() {
   let sheetId = '130zr5deVEjZMkBXubnhLhyADqUaDIwWUuegEvJQw4ns'; // with hyper
   sheetId = "1fRtT04cuk6dYsTAiIe5_7mBGn9TGTDnn-rC-R57Rlj8"  // no hyper
@@ -122,4 +231,5 @@ function main() {
   Logger.log(links);
   clearSheetExceptTopRow();
   iterateLinks(links);
+  tagCellsUsingSwitch();
 }
