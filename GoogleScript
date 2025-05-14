@@ -1,0 +1,125 @@
+function getRichTextFromSecondColumn(sheetId) {
+  Logger.log("parsing sheet!")
+  const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+  const range = sheet.getDataRange();
+  const richData = range.getRichTextValues();
+
+  let linksList = [];
+  for (let i = 1; i < richData.length; i++) { // Skip header
+    const richText = richData[i][1]; // 2nd column = index 1
+    const url = richText.getLinkUrl(); // null if no link
+    //csv += url ? `"${url}"\n` : '""\n'; // handle blank cells too
+    if (url) {
+      linksList.push(url); // Add the link to the list
+    }
+  }
+  return linksList;
+
+}
+
+function getPlainTextFromSecondColumn(sheetId) {
+  const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+  const range = sheet.getRange(2, 2, sheet.getLastRow() - 1); // from row 2, col 2 (B), all rows except header
+  const values = range.getValues(); // gets values as 2D array
+
+  let plainTextList = [];
+
+  for (let i = 0; i < values.length; i++) {
+    plainTextList.push(values[i][0]); // Each row is an array with one value
+  }
+
+  Logger.log(plainTextList);
+  return plainTextList;
+}
+
+function iterateLinks(listOfLinks) {
+  let index = 2;
+  listOfLinks.forEach(function(link) {
+    Logger.log('Link: ' + link);
+    const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
+    Logger.log('Processing Google Doc: ' + docId);
+    if(docId != null) {
+      let rowData = parseDocSections(docId);
+      Logger.log(rowData)
+      writeSectionsToSheet(rowData, index)
+    }
+  
+    index++;
+  });
+}
+
+function writeSectionsToSheet(sections, rowIndex) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sections.forEach(function(item, index) {
+    sheet.getRange(rowIndex, index + 1).setValue(item); // Column index starts from 1, so add 1 to `index`
+  });
+}
+
+function parseDocSections(docId) {
+
+  const doc = DocumentApp.openById(docId); // Open the Google Doc using the DocumentApp API
+  const body = doc.getBody();     // Get the body of the document
+  const paragraphs = body.getParagraphs();      // Iterate through all elements in the body
+
+  let textSections = [];
+  paragraphs.forEach(function(paragraph) {
+    const text = paragraph.getText(); // Get the text content of the paragraph
+
+    Logger.log("Type: " + paragraph.getHeading())
+    textSections.push(text)
+
+    // Example: Check if the paragraph is a heading (e.g., Heading 1)
+    //if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING1) {
+    //  Logger.log('Heading 1: ' + text);
+    //}
+
+    // Example: Check if the paragraph is a regular paragraph
+    //if (paragraph.getHeading() === DocumentApp.ParagraphHeading.NORMAL) {
+    //  Logger.log('Normal Paragraph: ' + text);
+    //}
+
+    // You can add more conditions to check for other types of sections (Headings 2, 3, Lists, etc.)
+  });
+  Logger.log("textSections: " + textSections)
+  return textSections;
+}
+
+function extractDocIdFromUrl(url) {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+function importDocToSheet(docId) {
+  Logger.log("parsing doc!")
+  //const docId = '1imEmCKCVg0hnNTbONt7YNmxmXe4yTFf09xxgOmgI3F4'; // From the URL of your Google Doc
+  const body = DocumentApp.openById(docId).getBody().getText();
+  const lines = body.split('\n');
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.clear(); // optional
+
+  lines.forEach((line, i) => {
+    const cells = line.split(','); // or '\t' for tab-separated
+    sheet.getRange(i + 1, 1, 1, cells.length).setValues([cells]);
+  });
+}
+
+function clearSheetExceptTopRow() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+
+  // Clear all rows except the first one
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, lastColumn).clearContent();
+  }
+}
+
+function main() {
+  let sheetId = '130zr5deVEjZMkBXubnhLhyADqUaDIwWUuegEvJQw4ns'; // with hyper
+  sheetId = "1fRtT04cuk6dYsTAiIe5_7mBGn9TGTDnn-rC-R57Rlj8"  // no hyper
+  const links = getPlainTextFromSecondColumn(sheetId); //parseSheetToCSV();
+  Logger.log(links);
+  clearSheetExceptTopRow();
+  iterateLinks(links);
+}
