@@ -71,11 +71,18 @@ function parseDocSections(docId) {
   let textSections = [];
 
   textSections.push("todo route"); // empty first spot...
-  paragraphs.forEach(function(paragraph) {
-    const text = paragraph.getText(); // Get the text content of the paragraph
+  for (var i = 0; i < paragraphs.length; i++) {
+  //paragraphs.forEach(function(paragraph) {
+    var paragraph = paragraphs[i];
+    const text = paragraph.getText().trim(); // Get the text content of the paragraph
 
     //Logger.log("Type: " + paragraph.getHeading())
     //textSections.push(text)
+    if (text === "") {
+      //Logger.log("Type: " + paragraph.getHeading())
+      Logger.log("Skipping empty line... " );
+      continue;
+    } 
 
     // H1
     // N
@@ -87,8 +94,6 @@ function parseDocSections(docId) {
 
     // H3 - x7
     // N
-
-
 
     // Example: Check if the paragraph is a heading (e.g., Heading 1)
     if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING1) {
@@ -124,8 +129,13 @@ function parseDocSections(docId) {
       currentNormal += text;
     }
 
-    // You can add more conditions to check for other types of sections (Headings 2, 3, Lists, etc.)
-  });
+  }
+
+  // Cleanup Last content
+  if(currentNormal != '') {
+    textSections.push(currentNormal.trim());
+  }
+
   Logger.log("textSections: " + textSections)
   return textSections;
 }
@@ -180,18 +190,27 @@ function tagCellsUsingSwitch() {
         case 4: // article_section_1
         case 6: // article_section_2
         case 8: // article_section_3
-        case 10: // article_section_4
-        case 12: // article_section_5
-        case 14: // article_section_6
+        //case 10: // article_section_4
+        //case 12: // article_section_5
+        //case 14: // article_section_6
           title = values[row][col-1];
           result = `<h2>${title}</h2><ul>`;
+
           lines = cellValue.split('.');
+          Logger.log("lines: " + lines.length)
+          if(lines.length <= 1 ) {
+            Logger.log("Uh oh, no lines found!!")
+            //lines = cellValue.split(/\r?\n|\r/);
+            lines = cellValue.split(/(?<=[a-z0-9])(?=[A-Z0-9])/);
+          }
+          //Logger.log("lines: " + lines.length)
           for (let i = 0; i < lines.length; i++) {
             if(lines[i].length == 0) {
               continue;
             }
             result += `<li>${lines[i]}</li>`;
           }
+
           result += `</ul>`;
           values[row][col] = result;
           break;
