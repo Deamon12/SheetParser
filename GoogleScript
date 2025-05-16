@@ -35,15 +35,15 @@ function getPlainTextFromSecondColumn(sheetId) {
 function iterateLinks(listOfLinks) {
   let index = 2;
   listOfLinks.forEach(function(link) {
-    Logger.log('Link: ' + link);
+    //Logger.log('Link: ' + link);
+    Logger.log("Checking link: " + (index-1) + " of " + listOfLinks.length )
     const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
-    Logger.log('Processing Google Doc: ' + docId);
+    //Logger.log('Processing Google Doc: ' + docId);
     if(docId != null) {
       let rowData = parseDocSections(docId);//parseDocSections(docId);
-      Logger.log(rowData)
+      //Logger.log(rowData)
       writeSectionsToSheet(rowData, index)
     }
-  
     index++;
   });
 }
@@ -61,7 +61,7 @@ function parseDocSections(docId) {
   const doc = DocumentApp.openById(docId); // Open the Google Doc using the DocumentApp API
   const body = doc.getBody();     // Get the body of the document
   const numElements = body.getNumChildren();
-  Logger.log("numElements: " + numElements)
+  //Logger.log("numElements: " + numElements)
   const paragraphs = body.getParagraphs();      // Iterate through all elements in the body
 
   let whichH2 = 0;
@@ -80,7 +80,7 @@ function parseDocSections(docId) {
     //textSections.push(text)
     if (text === "") {
       //Logger.log("Type: " + paragraph.getHeading())
-      Logger.log("Skipping empty line... " );
+      //Logger.log("Skipping empty line... " );
       continue;
     } 
 
@@ -101,7 +101,7 @@ function parseDocSections(docId) {
         textSections.push(currentNormal);
         currentNormal = '';
       }
-      Logger.log('Heading 1: ' + text);
+      //Logger.log('Heading 1: ' + text);
       textSections.push(text);
     }
 
@@ -136,7 +136,7 @@ function parseDocSections(docId) {
     textSections.push(currentNormal.trim());
   }
 
-  Logger.log("textSections: " + textSections)
+  //Logger.log("textSections: " + textSections)
   return textSections;
 }
 
@@ -146,8 +146,7 @@ function extractDocIdFromUrl(url) {
 }
 
 function importDocToSheet(docId) {
-  Logger.log("parsing doc!")
-  //const docId = '1imEmCKCVg0hnNTbONt7YNmxmXe4yTFf09xxgOmgI3F4'; // From the URL of your Google Doc
+  //Logger.log("parsing doc!")
   const body = DocumentApp.openById(docId).getBody().getText();
   const lines = body.split('\n');
 
@@ -197,9 +196,9 @@ function tagCellsUsingSwitch() {
           result = `<h2>${title}</h2><ul>`;
 
           lines = cellValue.split('.');
-          Logger.log("lines: " + lines.length)
+          //Logger.log("lines: " + lines.length)
           if(lines.length <= 1 ) {
-            Logger.log("Uh oh, no lines found!!")
+            //Logger.log("Uh oh, no lines found!!")
             //lines = cellValue.split(/\r?\n|\r/);
             lines = cellValue.split(/(?<=[a-z0-9])(?=[A-Z0-9])/);
           }
@@ -214,27 +213,14 @@ function tagCellsUsingSwitch() {
           result += `</ul>`;
           values[row][col] = result;
           break;
+        case 10: // article_section_4
+        case 12: // article_section_5
+        case 14: // article_section_6
+          title = values[row][col-1];
+          result = `<h2>${title}</h2>${cellValue}`;
+          values[row][col] = result;
+        break;
 
-/*
-        case 2: // Column C (e.g., 'intro_copy')
-          if (!cellValue.includes('<p>')) {
-            values[row][col] = `<p>${cellValue}</p>`;
-          }
-          break;
-
-        case 16: // Column Q (e.g., 'accordion_headline_1')
-          if (!cellValue.includes('<h3>')) {
-            values[row][col] = `<h3>${cellValue}</h3>`;
-          }
-          break;
-
-        case 17: // Column R (e.g., 'accordion_info_1')
-          if (!cellValue.includes('<div>')) {
-            values[row][col] = `<div>${cellValue}</div>`;
-          }
-          break;
-          */
-        // Add more cases as needed
       }
     }
   }
@@ -247,7 +233,7 @@ function main() {
   let sheetId = '130zr5deVEjZMkBXubnhLhyADqUaDIwWUuegEvJQw4ns'; // with hyper
   sheetId = "1fRtT04cuk6dYsTAiIe5_7mBGn9TGTDnn-rC-R57Rlj8"  // no hyper
   const links = getPlainTextFromSecondColumn(sheetId); //parseSheetToCSV();
-  Logger.log(links);
+  //Logger.log(links);
   clearSheetExceptTopRow();
   iterateLinks(links);
   tagCellsUsingSwitch();
