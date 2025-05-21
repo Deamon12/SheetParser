@@ -14,11 +14,10 @@ function getRichTextFromSecondColumn(sheetId) {
     }
   }
   return linksList;
-
 }
 
-function getPlainTextFromSecondColumn(sheetId) {
-  const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+function getPlainTextFromSecondColumn(sheet) {
+  //const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
   const range = sheet.getRange(2, 2, sheet.getLastRow() - 1); // from row 2, col 2 (B), all rows except header
   const values = range.getValues(); // gets values as 2D array
 
@@ -32,32 +31,34 @@ function getPlainTextFromSecondColumn(sheetId) {
   return plainTextList;
 }
 
-function iterateLinks(listOfLinks) {
+function iterateLinks(listOfLinks, outputSheet) {
+
   let index = 2;
   listOfLinks.forEach(function(link) {
     //Logger.log('Link: ' + link);
     Logger.log("Checking link: " + (index-1) + " of " + listOfLinks.length )
     const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
-    //Logger.log('Processing Google Doc: ' + docId);
+    Logger.log('Processing Google Doc: ' + docId);
     if(docId != null) {
-      let rowData = parseDocSections(docId);//parseDocSections(docId);
-      //Logger.log(rowData)
-      writeSectionsToSheet(rowData, index)
+      let rowData = parseDocSections(docId);
+      Logger.log(rowData)
+      writeSectionsToSheet(rowData, index, outputSheet)
     }
     index++;
   });
 }
 
-function writeSectionsToSheet(sections, rowIndex) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+function writeSectionsToSheet(sections, rowIndex, sheet) {
+   
+
   sections.forEach(function(item, index) {
     sheet.getRange(rowIndex, index + 1).setValue(item); // Column index starts from 1, so add 1 to `index`
   });
+
 }
 
 
 function parseDocSections(docId) {
-
   const doc = DocumentApp.openById(docId); // Open the Google Doc using the DocumentApp API
   const body = doc.getBody();     // Get the body of the document
   const numElements = body.getNumChildren();
@@ -145,33 +146,37 @@ function extractDocIdFromUrl(url) {
   return match ? match[1] : null;
 }
 
-function importDocToSheet(docId) {
-  //Logger.log("parsing doc!")
-  const body = DocumentApp.openById(docId).getBody().getText();
-  const lines = body.split('\n');
+function clearSheet(sheet) {
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.clear(); // optional
+  sheet.clear();
+   const headers = [
+    "route", "headline", "intro_copy",
+    "section_1_nav", 
+    "article_section_1", 
+    "section_2_nav",
+    "article_section_2", 
+    "section_3_nav",
+    "article_section_3", 
+    "section_4_nav",
+    "article_section_4",
+    "section_5_nav",
+    "article_section_5",
+    "section_6_nav",
+    "article_section_6", 
 
-  lines.forEach((line, i) => {
-    const cells = line.split(','); // or '\t' for tab-separated
-    sheet.getRange(i + 1, 1, 1, cells.length).setValues([cells]);
-  });
+    "faq_headline",
+    "accordion_headline_1", "accordion_info_1",
+    "accordion_headline_2", "accordion_info_2",
+    "accordion_headline_3", "accordion_info_3",
+    "accordion_headline_4", "accordion_info_4",
+    "accordion_headline_5", "accordion_info_5",
+    "seo_description"
+  ];
+  // Set the headers in the first row
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 }
 
-function clearSheetExceptTopRow() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  const lastRow = sheet.getLastRow();
-  const lastColumn = sheet.getLastColumn();
-
-  // Clear all rows except the first one
-  if (lastRow > 1) {
-    sheet.getRange(2, 1, lastRow - 1, lastColumn).clearContent();
-  }
-}
-
-function tagCellsUsingSwitch() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+function tagCellsUsingSwitch(sheet) {
   const range = sheet.getDataRange();
   const values = range.getValues(); // 2D array of all data
 
@@ -230,11 +235,15 @@ function tagCellsUsingSwitch() {
 }
 
 function main() {
-  let sheetId = '130zr5deVEjZMkBXubnhLhyADqUaDIwWUuegEvJQw4ns'; // with hyper
-  sheetId = "1fRtT04cuk6dYsTAiIe5_7mBGn9TGTDnn-rC-R57Rlj8"  // no hyper
-  const links = getPlainTextFromSecondColumn(sheetId); //parseSheetToCSV();
-  //Logger.log(links);
-  clearSheetExceptTopRow();
-  iterateLinks(links);
-  tagCellsUsingSwitch();
+  let inputSheetId = '1fRtT04cuk6dYsTAiIe5_7mBGn9TGTDnn-rC-R57Rlj8';
+  let outputSheetId = '1DjmgHBhkL9a3hiJpikMi9UekdMGNIphMXF3nMxcR37M';
+
+
+  let inputSheet = SpreadsheetApp.openById(inputSheetId).getActiveSheet();
+  let outputSheet = SpreadsheetApp.openById(outputSheetId).getActiveSheet(); 
+  Logger.log("outputSheet: " + outputSheet)
+  const links = getPlainTextFromSecondColumn(inputSheet);
+  clearSheet(outputSheet);
+  iterateLinks(links, outputSheet);
+  tagCellsUsingSwitch(outputSheet);
 }
