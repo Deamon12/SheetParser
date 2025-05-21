@@ -34,7 +34,7 @@ function iterateLinks(listOfLinks, outputSheet) {
     //Logger.log('Link: ' + link);
     Logger.log("Checking link: " + (index-1) + " of " + listOfLinks.length )
     const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
-    Logger.log('Processing Google Doc: ' + docId);
+    //Logger.log('Processing Google Doc: ' + docId);
     if(docId != null) {
       let rowData = parseDocSections(docId);
       //Logger.log(rowData)
@@ -118,6 +118,7 @@ function parseDocSections(docId) {
       if(!text.endsWith(".")) {
         text = text + ".";
       }
+      text = text.slice(0, -1) + "$$$";  // Artificial newline
       currentNormal += text;
     }
 
@@ -179,7 +180,7 @@ function tagCellsUsingSwitch(sheet) {
 
       let title;
       let result;
-      let lines;
+      //let lines;
 
       switch (col) {
 
@@ -191,7 +192,7 @@ function tagCellsUsingSwitch(sheet) {
           result = `<h2>${title}</h2><ul>`;
 
           //Logger.log("UL CONTENT? - " + cellValue)
-          lines = cellValue.split('.');
+          let lines = cellValue.split("$$$"); // was '.'
           // The previous step - Doc parsing should add periods now...
           //Logger.log("lines: " + lines.length)
           for (let i = 0; i < lines.length; i++) {
@@ -209,11 +210,14 @@ function tagCellsUsingSwitch(sheet) {
         case 10: // article_section_4
         case 12: // article_section_5
         case 14: // article_section_6
+          cellValue = cellValue.replace("$$$", "");
           title = values[row][col-1];
           result = `<h2>${title}</h2>${cellValue}`;
           values[row][col] = result;
         break;
-
+        default:
+          values[row][col] = cellValue.replace("$$$", "");
+        break;
       }
     }
   }
