@@ -17,17 +17,13 @@ function getRichTextFromSecondColumn(sheetId) {
 }
 
 function getPlainTextFromSecondColumn(sheet) {
-  //const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
   const range = sheet.getRange(2, 2, sheet.getLastRow() - 1); // from row 2, col 2 (B), all rows except header
   const values = range.getValues(); // gets values as 2D array
-
   let plainTextList = [];
-
   for (let i = 0; i < values.length; i++) {
     plainTextList.push(values[i][0]); // Each row is an array with one value
   }
-
-  Logger.log(plainTextList);
+  //Logger.log(plainTextList);
   return plainTextList;
 }
 
@@ -41,7 +37,7 @@ function iterateLinks(listOfLinks, outputSheet) {
     Logger.log('Processing Google Doc: ' + docId);
     if(docId != null) {
       let rowData = parseDocSections(docId);
-      Logger.log(rowData)
+      //Logger.log(rowData)
       writeSectionsToSheet(rowData, index, outputSheet)
     }
     index++;
@@ -49,14 +45,10 @@ function iterateLinks(listOfLinks, outputSheet) {
 }
 
 function writeSectionsToSheet(sections, rowIndex, sheet) {
-   
-
   sections.forEach(function(item, index) {
     sheet.getRange(rowIndex, index + 1).setValue(item); // Column index starts from 1, so add 1 to `index`
   });
-
 }
-
 
 function parseDocSections(docId) {
   const doc = DocumentApp.openById(docId); // Open the Google Doc using the DocumentApp API
@@ -65,20 +57,16 @@ function parseDocSections(docId) {
   //Logger.log("numElements: " + numElements)
   const paragraphs = body.getParagraphs();      // Iterate through all elements in the body
 
-  let whichH2 = 0;
-  let whichH3 = 0;
-
   let currentNormal = '';
   let textSections = [];
 
-  textSections.push("todo route"); // empty first spot...
+  textSections.push("todo route"); // todo empty first spot...
+
   for (var i = 0; i < paragraphs.length; i++) {
-  //paragraphs.forEach(function(paragraph) {
     var paragraph = paragraphs[i];
-    const text = paragraph.getText().trim(); // Get the text content of the paragraph
+    let text = paragraph.getText().trim(); // Get the text content of the paragraph
 
     //Logger.log("Type: " + paragraph.getHeading())
-    //textSections.push(text)
     if (text === "") {
       //Logger.log("Type: " + paragraph.getHeading())
       //Logger.log("Skipping empty line... " );
@@ -126,7 +114,10 @@ function parseDocSections(docId) {
 
     // Example: Check if the paragraph is a regular paragraph
     if (paragraph.getHeading() === DocumentApp.ParagraphHeading.NORMAL) {
-      //Logger.log('Normal Paragraph: ' + text);
+      //Logger.log('Normal Text: ' + text);
+      if(!text.endsWith(".")) {
+        text = text + ".";
+      }
       currentNormal += text;
     }
 
@@ -191,22 +182,17 @@ function tagCellsUsingSwitch(sheet) {
       let lines;
 
       switch (col) {
+
+        // These cases contain LIs
         case 4: // article_section_1
         case 6: // article_section_2
         case 8: // article_section_3
-        //case 10: // article_section_4
-        //case 12: // article_section_5
-        //case 14: // article_section_6
           title = values[row][col-1];
           result = `<h2>${title}</h2><ul>`;
 
+          //Logger.log("UL CONTENT? - " + cellValue)
           lines = cellValue.split('.');
-          //Logger.log("lines: " + lines.length)
-          if(lines.length <= 1 ) {
-            //Logger.log("Uh oh, no lines found!!")
-            //lines = cellValue.split(/\r?\n|\r/);
-            lines = cellValue.split(/(?<=[a-z0-9])(?=[A-Z0-9])/);
-          }
+          // The previous step - Doc parsing should add periods now...
           //Logger.log("lines: " + lines.length)
           for (let i = 0; i < lines.length; i++) {
             if(lines[i].length == 0) {
@@ -218,6 +204,8 @@ function tagCellsUsingSwitch(sheet) {
           result += `</ul>`;
           values[row][col] = result;
           break;
+
+        // No LIs in these cases
         case 10: // article_section_4
         case 12: // article_section_5
         case 14: // article_section_6
@@ -241,7 +229,7 @@ function main() {
 
   let inputSheet = SpreadsheetApp.openById(inputSheetId).getActiveSheet();
   let outputSheet = SpreadsheetApp.openById(outputSheetId).getActiveSheet(); 
-  Logger.log("outputSheet: " + outputSheet)
+  //Logger.log("outputSheet: " + outputSheet)
   const links = getPlainTextFromSecondColumn(inputSheet);
   clearSheet(outputSheet);
   iterateLinks(links, outputSheet);
