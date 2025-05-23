@@ -1,0 +1,270 @@
+function getRichTextFromSecondColumn(sheetId) {
+  Logger.log("parsing sheet!")
+  const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+  const range = sheet.getDataRange();
+  const richData = range.getRichTextValues();
+
+  let linksList = [];
+  for (let i = 1; i < richData.length; i++) { // Skip header
+    const richText = richData[i][1]; // 2nd column = index 1
+    const url = richText.getLinkUrl(); // null if no link
+    //csv += url ? `"${url}"\n` : '""\n'; // handle blank cells too
+    if (url) {
+      linksList.push(url); // Add the link to the list
+    }
+  }
+  return linksList;
+}
+
+function getPlainTextFromSecondColumn(sheet) {
+  const range = sheet.getRange(2, 2, sheet.getLastRow() - 1); // from row 2, col 2 (B), all rows except header
+  const values = range.getValues(); // gets values as 2D array
+  let plainTextList = [];
+  for (let i = 0; i < values.length; i++) {
+    plainTextList.push(values[i][0]); // Each row is an array with one value
+  }
+  //Logger.log(plainTextList);
+  return plainTextList;
+}
+
+function iterateLinks(listOfLinks, outputSheet) {
+
+  let index = 2;
+  listOfLinks.forEach(function(link) {
+    //Logger.log('Link: ' + link);
+    Logger.log("Checking link: " + (index-1) + " of " + listOfLinks.length )
+    const docId = extractDocIdFromUrl(link); // Extract the document ID from the URL
+    //Logger.log('Processing Google Doc: ' + docId);
+    if(docId != null) {
+      let rowData = parseDocSections(docId);
+      //Logger.log(rowData)
+      writeSectionsToSheet(rowData, index, outputSheet)
+    }
+    index++;
+  });
+}
+
+function writeSectionsToSheet(sections, rowIndex, sheet) {
+  sections.forEach(function(item, index) {
+    sheet.getRange(rowIndex, index + 1).setValue(item); // Column index starts from 1, so add 1 to `index`
+  });
+}
+
+function parseDocSections(docId) {
+  const doc = DocumentApp.openById(docId);  // Open the Google Doc using the DocumentApp API
+  const body = doc.getBody();               // Get the body of the document
+  const numElements = body.getNumChildren();
+  //Logger.log("numElements: " + numElements)
+  const paragraphs = body.getParagraphs();      // Iterate through all elements in the body
+
+  let currentNormal = '';
+  let textSections = [];
+
+  textSections.push("todo route"); // todo empty first spot...
+
+  for (var i = 0; i < paragraphs.length; i++) {
+    var paragraph = paragraphs[i];
+    let text = paragraph.getText().trim(); // Get the text content of the paragraph
+
+    //Logger.log("Type: " + paragraph.getHeading())
+    if (text === "") {
+      //Logger.log("Type: " + paragraph.getHeading())
+      //Logger.log("Skipping empty line... " );
+      continue;
+    } 
+
+    // H1
+    // N
+
+    // H2 - x15
+    // Normal
+
+    // H2
+
+    // H3 - x7  ???
+    // N        ???
+
+    // Example: Check if the paragraph is a heading (e.g., Heading 1)
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING1) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      //Logger.log('Heading 1: ' + text);
+      textSections.push(text);
+    }
+
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING2) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      //Logger.log('Heading 2: ' + text);
+      textSections.push(text);
+    }
+
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.HEADING3) {
+      if(currentNormal != '') {
+        textSections.push(currentNormal);
+        currentNormal = '';
+      }
+      //Logger.log('Heading 2: ' + text);
+      textSections.push(text);
+    }
+
+    // Example: Check if the paragraph is a regular paragraph
+    if (paragraph.getHeading() === DocumentApp.ParagraphHeading.NORMAL) {
+      //Logger.log('Normal Text: ' + text);
+      if(!text.endsWith(".")) {
+        text = text + ".";
+      }
+      text = text.slice(0, -1) + "$$$";  // Artificial newline
+      currentNormal += text;
+    }
+
+  }
+
+  // Cleanup Last content
+  if(currentNormal != '') {
+    textSections.push(currentNormal.trim());
+  }
+
+  //Logger.log("textSections: " + textSections)
+  return textSections;
+}
+
+function extractDocIdFromUrl(url) {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+function clearSheet(sheet) {
+
+  sheet.clear();
+   const headers = [
+    "route", "headline", "intro_copy",
+    "section_1_nav", 
+    "question_1",
+    "section_2_nav", 
+    "question_2",
+    "section_3_nav", 
+    "question_3",
+    "section_4_nav", 
+    "question_4",
+    "section_5_nav", 
+    "question_5",
+    "section_6_nav", 
+    "question_6",
+    "section_7_nav",  
+    "question_7",
+    "section_8_nav", 
+    "question_8",
+    "section_9_nav",  
+    "question_9",
+    "section_10_nav",  
+    "question_10",
+    "section_11_nav", 
+    "question_11", 
+    "section_12_nav", 
+    "question_12", 
+    "section_13_nav", 
+    "question_13",
+    "section_14_nav", 
+    "question_14",
+    "section_15_nav", 
+    "question_15",
+    "additional_questions_header",
+    "additional_questions_text",
+    "conclusion_header",
+    "conclusion_text",
+    "seo_description"
+  ];
+  // Set the headers in the first row
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+}
+
+function tagCellsUsingSwitch(sheet) {
+  const range = sheet.getDataRange();
+  const values = range.getValues();     // 2D array of all data
+
+  // Start from row 1 if row 0 is the header
+  for (let row = 1; row < values.length; row++) {
+    for (let col = 0; col < values[0].length; col++) {
+      let cellValue = values[row][col];
+      if (typeof cellValue !== 'string' || !cellValue.trim()) continue;
+
+      let title;
+      let result;
+
+      switch (col) {
+
+        // No LIs in these cases
+        case 4:
+        case 6:
+        case 8:
+        case 10:
+        case 12:
+        case 14:
+        case 16:
+        case 18:
+        case 20:
+        case 22:
+        case 24:
+        case 26:
+        case 28:
+        case 30:
+        case 32:
+          cellValue = cellValue.replace("$$$", "");
+          title = values[row][col-1];
+          result = `<h2>${title}</h2>${cellValue}`;
+          values[row][col] = result;
+        break;
+        case 34:  // additional
+        case 36:  // conclusion
+          title = values[row][col-1];
+          result = `<h2>${title}</h2><ul>`;
+          let lines = cellValue.split("$$$"); // was '.'
+          // The previous step - Doc parsing should add periods now...
+          //Logger.log("lines: " + lines.length)
+          for (let i = 0; i < lines.length; i++) {
+            if(lines[i].length == 0) {
+              continue;
+            }
+            result += `<li>${lines[i]}</li>`;
+          }
+
+          result += `</ul>`;
+          values[row][col] = result;
+        break;
+        default:
+          values[row][col] = cellValue.replace("$$$", "");
+        break;
+      }
+    }
+  }
+
+  // Write back updated values
+  range.setValues(values);
+}
+
+function cleanExtraColumns(sheet) {
+  const columnsToDelete = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]; // 1-based column indices
+  columnsToDelete.sort((a, b) => b - a).forEach(col => {
+    sheet.deleteColumn(col);
+  });
+}
+
+function main() {
+  let inputSheetId = '1KGdsH445R3UlnFs_ET2ZCrBheNbktjV5KR5XJBD6lzg';
+  let outputSheetId = '1n0d_N9uW4VzD3BgzY02R2Q5AdizhKrWcMVL2nMgYVjg';
+
+
+  let inputSheet = SpreadsheetApp.openById(inputSheetId).getActiveSheet();
+  let outputSheet = SpreadsheetApp.openById(outputSheetId).getActiveSheet(); 
+  //Logger.log("outputSheet: " + outputSheet)
+  const links = getPlainTextFromSecondColumn(inputSheet);
+  clearSheet(outputSheet);
+  iterateLinks(links, outputSheet);
+  tagCellsUsingSwitch(outputSheet);
+  cleanExtraColumns(outputSheet);
+}
