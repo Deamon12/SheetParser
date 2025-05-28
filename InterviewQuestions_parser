@@ -189,27 +189,33 @@ function refactorData(sheet) {
 
       // Handle question cols
       if (col == 0) {  // headline
-        values[row][col] = cellValue.replace("15 ", "");
+        values[row][col] = cellValue.replace("15 ", ""); // Strip prefix
       }
+
       // Questions start at 3, with first answer at 4!!!!
       //else if (col % 2 === 1 && col >= 3 && col <= 31) {
       //    result = cellValue.replace("$$$", "");
       //    values[row][col] = result;
       //} 
+
       // Handle aaq and Conclusion
-      else if (col == 33 || col == 35) {
-          title = values[row][col-1];
+      else if (col == 33) {
+          //title = values[row][col-1];
           //result = `<h2>${title}</h2><ul>`;  -- No more header
-          result = `<ul>`;
-          let lines = cellValue.split("$$$"); // was '.'
-          // The previous step - Doc parsing should add periods now...
-          //Logger.log("lines: " + lines.length)
-          for (let i = 0; i < lines.length; i++) {
+          //result = `<ul>`;
+          result = "";
+          let lines = cellValue.split("$$$");
+          let firstLine = lines[0]; //`<p>` + lines[0] + `</p>`;
+          result = firstLine;
+          result += `<ul>`;
+          
+          for (let i = 1; i < lines.length; i++) {
             if(lines[i].length == 0) {
               continue;
             }
             line = lines[i];
-            if(line.startsWith("Disclaimer")){
+            
+            if(line.startsWith("Disclaimer")){  // skip this line
                 //result += `${lines[i]}`;
                 continue;
             } else {
@@ -218,8 +224,9 @@ function refactorData(sheet) {
           }
           result += `</ul>`;
           values[row][col] = result;
-      } else {
-        values[row][col] = cellValue.replace("$$$", "");
+      } 
+      else {
+        values[row][col] = cellValue.replaceAll("$$$", "");
       }
     }
   }
@@ -295,7 +302,6 @@ function insertColumnAndPopulateFromListToEnd(sheet, stringList) {
   sheet.getRange(1, lastCol, values.length, 1).setValues(values);
 }
 
-
 function addRouteSeoColumns(sheet) {
   const range = sheet.getDataRange();
   const values = range.getValues();     // 2D array of all data
@@ -317,7 +323,7 @@ function addRouteSeoColumns(sheet) {
 }
 
 function createRoute(job) {
-  return "/resources/hiring/interview-questions/"+job.toLowerCase().replace(" ", "-") ;//marketing-manager"
+  return "/resources/hiring/interview-questions/"+job.toLowerCase().replaceAll(" ", "-")
 }
 
 function createSeoDesc(job) {
