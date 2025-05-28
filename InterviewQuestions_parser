@@ -164,7 +164,7 @@ function clearSheet(sheet) {
     "question_14","answer_14",
     "question_15","answer_15",
     "aaq_nav",            // --- need to remove
-    "additional_questions",
+    "additional_answers",
     "conclusion_nav",     // --- need to remove
     "conclusion",
     //"seo_description"   -- added later
