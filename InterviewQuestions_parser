@@ -198,10 +198,9 @@ function refactorData(sheet) {
       //} 
       // Handle aaq and Conclusion
       else if (col == 33 || col == 35) {
-          //Logger.log(col + " : " + cellValue)
-          //Logger.log("You entered an odd number between 32 and 37: " + value);
           title = values[row][col-1];
-          result = `<h2>${title}</h2><ul>`;
+          //result = `<h2>${title}</h2><ul>`;  -- No more header
+          result = `<ul>`;
           let lines = cellValue.split("$$$"); // was '.'
           // The previous step - Doc parsing should add periods now...
           //Logger.log("lines: " + lines.length)
