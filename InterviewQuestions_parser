@@ -233,10 +233,10 @@ function refactorData(sheet) {
           } else {
             result = cellValue;
           }
-          values[row][col] = result.replaceAll("$$$", "");
+          values[row][col] = result.replaceAll("$$$", ".");
       } 
       else {
-        values[row][col] = cellValue.replaceAll("$$$", "");
+        values[row][col] = cellValue.replaceAll("$$$", ".");
       }
     }
   }
