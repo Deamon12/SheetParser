@@ -147,37 +147,22 @@ function clearSheet(sheet) {
     //"route",            -- added later
     "headline", 
     "intro_copy",
-    //"question_1_nav",   -- added later
-    "section_1_h",
-    "question_1",
-    "section_2_h", 
-    "question_2",
-    "section_3_h", 
-    "question_3",
-    "section_4_h", 
-    "question_4",
-    "section_5_h", 
-    "question_5",
-    "section_6_h", 
-    "question_6",
-    "section_7_h",  
-    "question_7",
-    "section_8_h", 
-    "question_8",
-    "section_9_h",  
-    "question_9",
-    "section_10_h",  
-    "question_10",
-    "section_11_h", 
-    "question_11", 
-    "section_12_h", 
-    "question_12", 
-    "section_13_h", 
-    "question_13",
-    "section_14_h", 
-    "question_14",
-    "section_15_h", 
-    "question_15",
+    //"question_nav",   -- added later
+    "question_1","answer_1",
+    "question_2","answer_2",
+    "question_3","answer_3", 
+    "question_4","answer_4",
+    "question_5","answer_5",
+    "question_6", "answer_6",
+    "question_7","answer_7",
+    "question_8","answer_8",
+    "question_9","answer_9",
+    "question_10","answer_10",
+    "question_11","answer_11",
+    "question_12","answer_12",
+    "question_13","answer_13",
+    "question_14","answer_14",
+    "question_15","answer_15",
     "aaq_nav",
     "additional_questions",
     "conclusion_nav",
@@ -207,14 +192,10 @@ function refactorData(sheet) {
         values[row][col] = cellValue.replace("15 ", "");
       }
       // Questions start at 3, with first answer at 4!!!!
-      else if (col % 2 === 1 && col >= 3 && col <= 31) {
-          //Logger.log("ANSWER - " + col)
-          //Logger.log("You entered an odd number between 5 and 32: " + value);
-          cellValue = cellValue.replace("$$$", "");
-          title = values[row][col-1];
-          result = `<h2>${title}</h2>${cellValue}`;
-          values[row][col] = result;
-      } 
+      //else if (col % 2 === 1 && col >= 3 && col <= 31) {
+      //    result = cellValue.replace("$$$", "");
+      //    values[row][col] = result;
+      //} 
       // Handle aaq and Conclusion
       else if (col == 33 || col == 35) {
           //Logger.log(col + " : " + cellValue)
@@ -299,6 +280,21 @@ function insertColumnAndPopulateFromList(sheet, insertAt, stringList) {
   sheet.getRange(1, insertAt, values.length, 1).setValues(values);
 }
 
+function insertColumnAndPopulateFromListToEnd(sheet, stringList) {
+
+  var lastCol = sheet.getLastColumn(); // Last column with data
+  sheet.insertColumnAfter(lastCol);    // Adds a new column after it
+
+  // Convert the list of strings into a vertical 2D array
+  var values = stringList.map(function(item) {
+    return [item]; // Each item becomes a row in one column
+  });
+
+  // Write the list into the new column starting at row 1
+  sheet.getRange(1, lastCol, values.length, 1).setValues(values);
+}
+
+
 function addRouteColumn(sheet) {
   const range = sheet.getDataRange();
   const values = range.getValues();     // 2D array of all data
@@ -315,7 +311,8 @@ function addRouteColumn(sheet) {
   }
 
     //Logger.log("Insert SEO")
-    insertColumnAndPopulateFromList(sheet, 22, seo);
+    //insertColumnAndPopulateFromList(sheet, 99, seo); // end
+    insertColumnAndPopulateFromListToEnd(sheet, seo);
     //Logger.log("Insert Routes")
     insertColumnAndPopulateFromList(sheet, 1, routes);
 }
@@ -340,8 +337,8 @@ function main() {
   iterateLinks(links, outputSheet);
   refactorData(outputSheet);
 
-  cleanExtraColumns(outputSheet);  // delete un-needed evalu cols
+  //cleanExtraColumns(outputSheet);  // delete un-needed evalu cols
   addRouteColumn(outputSheet);
   
-  insertAndPopulateExtraColumn(outputSheet, 4, "question_1_nav", "Interview Questions");
+  insertAndPopulateExtraColumn(outputSheet, 4, "question_nav", "Interview Questions");
 }
