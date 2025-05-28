@@ -147,7 +147,7 @@ function clearSheet(sheet) {
     //"route",            -- added later
     "headline", 
     "intro_copy",
-    //"question_nav",   -- added later
+    //"question_nav",   -- added later - REMOVED
     "question_1","answer_1",
     "question_2","answer_2",
     "question_3","answer_3", 
@@ -163,9 +163,9 @@ function clearSheet(sheet) {
     "question_13","answer_13",
     "question_14","answer_14",
     "question_15","answer_15",
-    "aaq_nav",
+    "aaq_nav",            // --- need to remove
     "additional_questions",
-    "conclusion_nav",
+    "conclusion_nav",     // --- need to remove
     "conclusion",
     //"seo_description"   -- added later
   ];
@@ -230,11 +230,11 @@ function refactorData(sheet) {
 }
 
 // Helper to remove unused columns
-function cleanExtraColumns(sheet) {
-  var columnsToDelete = [];
-  for (var i = 3; i <= 31; i += 2) {
-    columnsToDelete.push(i);
-  }
+function cleanExtraColumns(sheet, columnsToDelete) {
+  //var columnsToDelete = [34];
+  //for (var i = 3; i <= 31; i += 2) {
+  //  columnsToDelete.push(i);
+  //}
   Logger.log("columnsToDelete: " + columnsToDelete)
   columnsToDelete.sort((a, b) => b - a).forEach(col => {
     sheet.deleteColumn(col);
@@ -248,6 +248,7 @@ function insertAndPopulateExtraColumn(sheet, colIndex, header, content) {
   
   // Get number of rows that have data in any column
   var lastRow = sheet.getLastRow();
+  
 
   // Build values array to fill only populated rows
   var values = [];
@@ -284,6 +285,7 @@ function insertColumnAndPopulateFromListToEnd(sheet, stringList) {
 
   var lastCol = sheet.getLastColumn(); // Last column with data
   sheet.insertColumnAfter(lastCol);    // Adds a new column after it
+  //Logger.log("lastCol: " + lastCol)
 
   // Convert the list of strings into a vertical 2D array
   var values = stringList.map(function(item) {
@@ -295,7 +297,7 @@ function insertColumnAndPopulateFromListToEnd(sheet, stringList) {
 }
 
 
-function addRouteColumn(sheet) {
+function addRouteSeoColumns(sheet) {
   const range = sheet.getDataRange();
   const values = range.getValues();     // 2D array of all data
 
@@ -311,9 +313,7 @@ function addRouteColumn(sheet) {
   }
 
     //Logger.log("Insert SEO")
-    //insertColumnAndPopulateFromList(sheet, 99, seo); // end
-    insertColumnAndPopulateFromListToEnd(sheet, seo);
-    //Logger.log("Insert Routes")
+    insertColumnAndPopulateFromList(sheet, sheet.getLastColumn()+1, seo);
     insertColumnAndPopulateFromList(sheet, 1, routes);
 }
 
@@ -337,8 +337,8 @@ function main() {
   iterateLinks(links, outputSheet);
   refactorData(outputSheet);
 
-  //cleanExtraColumns(outputSheet);  // delete un-needed evalu cols
-  addRouteColumn(outputSheet);
+  addRouteSeoColumns(outputSheet);
   
-  insertAndPopulateExtraColumn(outputSheet, 4, "question_nav", "Interview Questions");
+  cleanExtraColumns(outputSheet, [34, 36]);  // delete un-needed evalu cols
+  //insertAndPopulateExtraColumn(outputSheet, 4, "question_nav", "Interview Questions");
 }
