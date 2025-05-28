@@ -207,6 +207,7 @@ function tagCellsUsingSwitch(sheet) {
       // Handle question cols
       if (col == 1) {  // title
         //Logger.log("TODO Title: " + cellValue )
+        values[row][col] = cellValue.replace("15 ", "");
       }
       // Questions start at 3, with first answer at 4!!!!
       else if (col % 2 === 0 && col >= 4 && col <= 32) {
@@ -365,5 +366,4 @@ function main() {
   cleanExtraColumns(outputSheet);
 
   insertAndPopulateExtraColumn(4, "question_1_nav", "Interview Questions");
-  //insertAndPopulateExtraColumn(4, "question_1_nav", "Interview Questions");
 }
