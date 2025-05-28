@@ -143,40 +143,41 @@ function clearSheet(sheet) {
   sheet.clear();
    const headers = [
     "route", "headline", "intro_copy",
-    "section_1_nav", 
+    //"question_1_nav",
+    "section_1_h",
     "question_1",
-    "section_2_nav", 
+    "section_2_h", 
     "question_2",
-    "section_3_nav", 
+    "section_3_h", 
     "question_3",
-    "section_4_nav", 
+    "section_4_h", 
     "question_4",
-    "section_5_nav", 
+    "section_5_h", 
     "question_5",
-    "section_6_nav", 
+    "section_6_h", 
     "question_6",
-    "section_7_nav",  
+    "section_7_h",  
     "question_7",
-    "section_8_nav", 
+    "section_8_h", 
     "question_8",
-    "section_9_nav",  
+    "section_9_h",  
     "question_9",
-    "section_10_nav",  
+    "section_10_h",  
     "question_10",
-    "section_11_nav", 
+    "section_11_h", 
     "question_11", 
-    "section_12_nav", 
+    "section_12_h", 
     "question_12", 
-    "section_13_nav", 
+    "section_13_h", 
     "question_13",
-    "section_14_nav", 
+    "section_14_h", 
     "question_14",
-    "section_15_nav", 
+    "section_15_h", 
     "question_15",
-    "additional_questions_header",
-    "additional_questions_text",
-    "conclusion_header",
-    "conclusion_text",
+    "aaq_nav",
+    "additional_questions",
+    "conclusion_nav",
+    "conclusion",
     "seo_description"
   ];
   // Set the headers in the first row
@@ -184,8 +185,14 @@ function clearSheet(sheet) {
 }
 
 function tagCellsUsingSwitch(sheet) {
+
+  // Insert new col, for nav item
+  //var columnToInsertBefore = 4; // This will insert a new column before column C
+  //sheet.insertColumnBefore(columnToInsertBefore);
+
   const range = sheet.getDataRange();
   const values = range.getValues();     // 2D array of all data
+
 
   // Start from row 1 if row 0 is the header
   for (let row = 1; row < values.length; row++) {
@@ -195,32 +202,27 @@ function tagCellsUsingSwitch(sheet) {
 
       let title;
       let result;
+      
 
-      switch (col) {
-
-        // No LIs in these cases
-        case 4:
-        case 6:
-        case 8:
-        case 10:
-        case 12:
-        case 14:
-        case 16:
-        case 18:
-        case 20:
-        case 22:
-        case 24:
-        case 26:
-        case 28:
-        case 30:
-        case 32:
+      // Handle question cols
+      if (col == 1) {  // title
+        //Logger.log("TODO Title: " + cellValue )
+      }
+      // Questions start at 3, with first answer at 4!!!!
+      else if (col % 2 === 0 && col >= 4 && col <= 32) {
+          //Logger.log("ANSWER - " + col)
+          //Logger.log("You entered an odd number between 5 and 32: " + value);
           cellValue = cellValue.replace("$$$", "");
           title = values[row][col-1];
           result = `<h2>${title}</h2>${cellValue}`;
           values[row][col] = result;
-        break;
-        case 34:  // additional
-        case 36:  // conclusion
+      } 
+      // Handle Addt and Conclusion
+      else if (col == 34 || col == 36) {
+        
+          Logger.log("LAST - " + col)
+          Logger.log(col + " : " + cellValue)
+          //Logger.log("You entered an odd number between 32 and 37: " + value);
           title = values[row][col-1];
           result = `<h2>${title}</h2><ul>`;
           let lines = cellValue.split("$$$"); // was '.'
@@ -230,16 +232,84 @@ function tagCellsUsingSwitch(sheet) {
             if(lines[i].length == 0) {
               continue;
             }
-            result += `<li>${lines[i]}</li>`;
+            line = lines[i];
+            if(line.startsWith("Disclaimer")){
+                //result += `${lines[i]}`;
+                continue;
+            } else {
+                result += `<li>${lines[i]}</li>`;
+            }
           }
-
           result += `</ul>`;
           values[row][col] = result;
-        break;
-        default:
-          values[row][col] = cellValue.replace("$$$", "");
-        break;
+      } else {
+        values[row][col] = cellValue.replace("$$$", "");
       }
+      
+
+      // switch (col) {
+
+      //   // No LIs in these cases
+      //   case 0: // route
+      //     break;
+      //   case 1: // Title header
+      //     Logger.log("1: " + cellValue)
+      //   break;
+      //   case 2: // Description
+      //     Logger.log("2: " + cellValue)
+      //   break;
+      //   case 3:
+      //     Logger.log("3: " + cellValue)
+      //   break;
+      //   case 4:
+      //   case 6:
+      //   case 8:
+      //   case 10:
+      //   case 12:
+      //   case 14:
+      //   case 16:
+      //   case 18:
+      //   case 20:
+      //   case 22:
+      //   case 24:
+      //   case 26:
+      //   case 28:
+      //   case 30:
+      //   case 32:
+      //     // cellValue = cellValue.replace("$$$", "");
+      //     // title = values[row][col-1];
+      //     // result = `<h2>${title}</h2>${cellValue}`;
+      //     // values[row][col] = result;
+      //   break;
+      //   case 34:  // additional
+      //   case 36:  // conclusion
+      //     //Logger.log(col + ": " + cellValue)
+      //     // title = values[row][col-1];
+      //     // result = `<h2>${title}</h2><ul>`;
+      //     // let lines = cellValue.split("$$$"); // was '.'
+      //     // // The previous step - Doc parsing should add periods now...
+      //     // //Logger.log("lines: " + lines.length)
+      //     // for (let i = 0; i < lines.length; i++) {
+      //     //   if(lines[i].length == 0) {
+      //     //     continue;
+      //     //   }
+      //     //   line = lines[i];
+      //     //   if(line.startsWith("Disclaimer")){
+      //     //       //result += `${lines[i]}`;
+      //     //       continue;
+      //     //   } else {
+      //     //       result += `<li>${lines[i]}</li>`;
+      //     //   }
+            
+      //     // }
+
+      //     // result += `</ul>`;
+      //     // values[row][col] = result;
+      //   break;
+      //   default:
+      //     // values[row][col] = cellValue.replace("$$$", "");
+      //   break;
+      // }
     }
   }
 
@@ -248,10 +318,36 @@ function tagCellsUsingSwitch(sheet) {
 }
 
 function cleanExtraColumns(sheet) {
-  const columnsToDelete = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]; // 1-based column indices
+  var columnsToDelete = [];
+  for (var i = 4; i <= 32; i += 2) {
+    columnsToDelete.push(i);
+  }
+  Logger.log("columnsToDelete: " + columnsToDelete)
   columnsToDelete.sort((a, b) => b - a).forEach(col => {
     sheet.deleteColumn(col);
   });
+}
+
+function insertAndPopulateExtraColumn(colIndex, header, content) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var columnToInsertBefore = colIndex;
+  sheet.insertColumnBefore(columnToInsertBefore);
+  
+  // Get number of rows that have data in any column
+  var lastRow = sheet.getLastRow();
+
+  // Build values array to fill only populated rows
+  var values = [];
+  for (var i = 1; i <= lastRow; i++) {
+    if(i == 1) {
+        values.push([header]);
+    } else {
+        values.push([content]);
+    }
+  }
+  
+  // Populate 10 rows of the new column
+  sheet.getRange(1, columnToInsertBefore, lastRow, 1).setValues(values);
 }
 
 function main() {
@@ -267,4 +363,7 @@ function main() {
   iterateLinks(links, outputSheet);
   tagCellsUsingSwitch(outputSheet);
   cleanExtraColumns(outputSheet);
+
+  insertAndPopulateExtraColumn(4, "question_1_nav", "Interview Questions");
+  //insertAndPopulateExtraColumn(4, "question_1_nav", "Interview Questions");
 }
