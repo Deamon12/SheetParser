@@ -225,6 +225,16 @@ function refactorData(sheet) {
           result += `</ul>`;
           values[row][col] = result;
       } 
+      else if (col == 35) {  // need to strip disclaimer
+          result = "";
+          let indexOf = cellValue.indexOf("Disclaimer:");
+          if(indexOf !== -1) {
+            result = cellValue.substring(0, indexOf);
+          } else {
+            result = cellValue;
+          }
+          values[row][col] = result.replaceAll("$$$", "");
+      } 
       else {
         values[row][col] = cellValue.replaceAll("$$$", "");
       }
